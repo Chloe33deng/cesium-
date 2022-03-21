@@ -1,0 +1,983 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Use correct character set. -->
+  <meta charset="utf-8">
+  <!-- Tell IE to use the latest, best version. -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <!-- Make the application on mobile take up the full browser screen and disable user scaling. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+  <title>Hello World!</title>
+  <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+  <script src="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+ <script src="../../../libs/cesium/Cesium.js"></script>
+ <link href="../../../libs/cesium/Widgets/widgets.css" rel="stylesheet" />
+  <style>
+      
+      html, body, #cesiumContainer {
+          width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+      }
+  </style>
+  
+</head>
+<body>
+  <div id="cesiumContainer"class="fullSize"></div>
+  <div id="creditContainer" style="display: none;"></div>
+  <!-- 插入学校图片logo -->
+  <img src="https://dss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=3789564237,3471863195&fm=26&gp=0.jpg" width="100px" ;="" height="100px" style="position:absolute; z-index: 50; left:500px;bottom:40px;">
+  <!-- 显示学号姓名 -->
+  <div id="name" style="width:340px;height:30px;position:absolute;bottom:40px;right:300px;z-index:1;font-size:15px;">
+    <div style="width:150px;height:30px;float:left;"> 
+     <font size="3" color="white">1812001107邓珊珊<span id="name"></span>
+     </font>
+    </div>
+    <!-- 显示经纬度视角高 -->
+<div id="latlng_show" style="width:340px;height:30px;position:absolute;bottom:40px;left:300px;z-index:1;font-size:15px;">
+  <div style="width:150px;height:30px;float:left;"> 
+   <font size="3" color="white">经度：<span id="longitude_show"></span>
+   </font>
+  </div>
+   <div style="width:150px;height:30px;float:left;"> 
+     <font size="3" color="white">纬度：<span id="latitude_show"></span>
+     </font>
+    </div>
+     <div style="width:160px;height:30px;float:left;"> 
+       <font size="3" color="white">视角高：<span id="altitude_show"></span>km</font> 
+       </div>
+      </div>
+  <!-- 下拉菜单 -->
+  <div id="divTest" class="btn-group" style="position:absolute;bottom:500px;left:0px;z-index:1;font-size:15px;">
+    <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown">
+        选择地点 <span class="caret"></span></button>
+      <ul class="dropdown-menu" role="menu" style="background:black;">
+          <li onclick="flytolocation1();" style="color: white;">香港迪士尼</li>
+          <li onclick="flytolocation2();" style="color: white;">香港西九龙</li>
+          <li onclick="flytolocation3();" style="color: white;">返回原视角</li>
+        </ul> 
+      <div class="btn-group">
+      <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown">
+      特效 <span class="caret"></span></button>
+      <ul class="dropdown-menu" role="menu" style="background:black;">
+        <li onclick="showSnow();" style="color: white;">下雪</li>
+        <li onclick="showRain();" style="color: white;">下雨</li>
+        <li onclick="showfirework();" style="color: white;">烟花</li>
+        <li onclick="stopTool();" style="color: white;">停止雨雪</li>
+        <li onclick="stopfirework();" style="color: white;">停止烟花</li>
+        
+      </ul>
+      <div class="btn-group">
+        <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown">
+      路线 <span class="caret"></span></button>
+         <ul class="dropdown-menu" role="menu" style="background:black;">
+        <li onclick="getPosition()" style="color: white;">绘制路线</li>
+        <li onclick="trackedline()" style="color: white;">跟踪路线</li>
+        <li onclick="clearDrawingBoard();" style="color: white;">清除路线</li>
+      </ul>
+      <div class="btn-group">
+      <button type="button" class="btn btn-dark dropdown-toggle" data-toggle="dropdown">
+        测量 <span class="caret"></span></button>
+        <ul class="dropdown-menu" role="menu" style="background:black;">
+          <li onclick="SetMode('drawPloy');" style="color: white;">测量面积</li>
+        <li onclick="SetMode('drawLine');" style="color: white;">测量长度</li>
+        <li onclick="clearDrawingBoard();" style="color: white;">清除</li>
+        </ul>
+    </div>
+  </div>
+</div>
+</div>
+  <script>
+    //添加地球
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTA1MTllZi03Njc4LTQyZjgtYWQwYS00OTczNjA0Yzc3ZTciLCJpZCI6NjAxNDIsImlhdCI6MTYyNDg2NDExOX0.lA98qhfTti-z_0NTjRjkrbdrIYT-y-f2OEcqbxv4-Jw';
+    var viewer = new Cesium.Viewer('cesiumContainer',{
+      
+    //imageryProvider: esri,
+    contextOptions: {
+    webgl: {
+    alpha: true
+ }
+ },
+    creditContainer: "creditContainer",
+    selectionIndicator: true, 
+    shouldAnimate: true,//是否显示烟花
+    baseLayerPicker: true, //是否显示图层选择控件
+    geocoder: true, //是否显示地名查找控件
+    animation: false, //是否显示动画控件
+    timeline: false, //时间线控件
+    sceneModePicker:true, //是否显示投影方式控件
+    geocoder: true, //是否显示地名查找控件
+    });
+    
+    //配置scence,激活基于太阳位置的光照
+    viewer.scene.globe.enableLighting = true;
+     //移除原始基础图层
+     viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
+
+//添加Sentinel-2图层
+var layer = viewer.imageryLayers.addImageryProvider(
+new Cesium.IonImageryProvider({ assetId: 3954 })
+);
+//下载Cesium World Terrain
+viewer.terrainProvider = Cesium.createWorldTerrain({
+  //水效果要求
+  requestWaterMask:false,
+  //地形亮度要求
+  requestVertexNormals:true
+});
+//启用深度测试，使地形后面的东西消失
+viewer.scene.globe.depthTestAgainstTerrain = true;
+
+
+
+//创建一个原始相机视角
+var initialPosition = new Cesium.Cartesian3.fromDegrees(114.1037, 22.3167,17600);//114.1652, 22.2887,2000
+var initialOrientation = new
+Cesium.HeadingPitchRoll.fromDegrees(7.1077496389876024807, -
+31.987223091598949054, 0.025883251314954971306);
+var homeCameraView = {
+  destination : initialPosition,
+  orientation : {
+    heading : initialOrientation.heading,
+    pitch : initialOrientation.pitch,
+    roll:initialOrientation.roll
+    }
+};
+//设置原始视角
+viewer.scene.camera.setView(homeCameraView);
+// 添加一些摄影机飞行动画选项
+homeCameraView.duration = 2.0;
+homeCameraView.maximumHeight = 2000;
+homeCameraView.pitchAdjustHeight = 2000;
+homeCameraView.endTransform = Cesium.Matrix4.IDENTITY;
+// 替代默认的主页按钮
+viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
+e.cancel = true;
+viewerscene.camera.flyTo(homeCameraView);
+});
+
+//添加坐标
+    //经纬度实时显示
+    var longitude_show = document.getElementById('longitude_show');
+        var latitude_show = document.getElementById('latitude_show');
+        var altitude_show = document.getElementById('altitude_show');
+        var canvas = viewer.scene.canvas;
+        //具体事件的实现
+        var ellipsoid = viewer.scene.globe.ellipsoid;
+        var handler = new Cesium.ScreenSpaceEventHandler(canvas);
+        handler.setInputAction(function(movement) {
+            //捕获椭球体，将笛卡尔二维平面坐标转为椭球体的笛卡尔三维坐标，返回球体表面的点
+            var cartesian = viewer.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+            if (cartesian) {
+                //将笛卡尔三维坐标转为地图坐标（弧度）
+                var cartographic = viewer.scene.globe.ellipsoid.cartesianToCartographic(cartesian);
+                //将地图坐标（弧度）转为十进制的度数
+                var lat_String = Cesium.Math.toDegrees(cartographic.latitude).toFixed(4);
+                var log_String = Cesium.Math.toDegrees(cartographic.longitude).toFixed(4);
+                var alti_String = (viewer.camera.positionCartographic.height / 1000).toFixed(2);
+                longitude_show.innerHTML = log_String;
+                latitude_show.innerHTML = lat_String;
+                altitude_show.innerHTML = alti_String;
+            }
+        }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+        
+//添加香港地区西九龙3D模型
+var tileset = viewer.scene.primitives.add(
+  new Cesium.Cesium3DTileset({
+    url: Cesium.IonResource.fromAssetId(492788),
+  })
+);
+//添加香港迪士尼3D模型
+var tileset = viewer.scene.primitives.add(
+  new Cesium.Cesium3DTileset({
+    url: Cesium.IonResource.fromAssetId(494983),
+  })
+);
+//视角切为香港迪士尼
+function flytolocation1() {
+    var boundingSphere = new
+    Cesium.BoundingSphere(Cesium.Cartesian3.fromDegrees(114.04218, 22.2995,2000),
+      250);
+    // Override behavior of home button
+    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (commandInfo) {
+    // Fly to custom position
+    viewer.camera.flyToBoundingSphere(boundingSphere);
+    // Tell the home button not to do anything
+      commandInfo.cancel = true;
+    });
+    // Set custom initial position
+      viewer.camera.flyToBoundingSphere(boundingSphere, { duration: 0 });
+    }
+
+//视角切为香港西九龙
+  function flytolocation2() {
+    var boundingSphere = new
+    Cesium.BoundingSphere(Cesium.Cartesian3.fromDegrees(114.1652, 22.2887,2000),
+      250);
+    // Override behavior of home button
+    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (commandInfo) {
+    // Fly to custom position
+    viewer.camera.flyToBoundingSphere(boundingSphere);
+    // Tell the home button not to do anything
+      commandInfo.cancel = true;
+    });
+    // Set custom initial position
+      viewer.camera.flyToBoundingSphere(boundingSphere, { duration: 0 });
+    }
+  //视角切为原始视角
+  function flytolocation3() {
+    viewer.scene.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(114.1037, 22.3167,17600),
+  });
+}
+    
+//按钮功能
+    
+var scene = viewer.scene;
+var loadedModels = [];
+var tempPoints = [];
+var tempEntities = [];
+var tempPinEntities = [];
+var tempPinLon, tempPinLat;
+var handler = null;
+
+function clearEffects() {
+  if (handler != null) {
+    handler.destroy();
+  }
+}
+
+
+
+		//VR场景
+	var scene = viewer.scene;
+	var canvas = viewer.canvas;
+	canvas.setAttribute('tabindex', '0'); // needed to put focus on the canvas
+	canvas.onclick = function() {
+    canvas.focus();
+	};
+
+
+
+
+
+/* 粒子效果：雨、雪 、烟花*/
+ 
+ //模拟下雨下雪烟花
+    var lat = 42.006;
+    var lon = 128.055;
+    //取消双击事件
+    viewer.cesiumWidget.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+    //设置homebutton的位置
+    Cesium.Camera.DEFAULT_VIEW_RECTANGLE =
+        Cesium.Rectangle.fromDegrees(lon - 1, lat - 1, lon + 1, lat + 1);//Rectangle(west, south, east, north)
+    //设置初始位置
+    /*viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(114.1037, 22.3167,17600)
+    });*/
+    //定义下雪场景 着色器
+    function FS_Snow() {
+        return "uniform sampler2D colorTexture;\n\
+    varying vec2 v_textureCoordinates;\n\
+\n\
+    float snow(vec2 uv,float scale)\n\
+    {\n\
+        float time = czm_frameNumber / 60.0;\n\
+        float w=smoothstep(1.,0.,-uv.y*(scale/10.));if(w<.1)return 0.;\n\
+        uv+=time/scale;uv.y+=time*2./scale;uv.x+=sin(uv.y+time*.5)/scale;\n\
+        uv*=scale;vec2 s=floor(uv),f=fract(uv),p;float k=3.,d;\n\
+        p=.5+.35*sin(11.*fract(sin((s+p+scale)*mat2(7,3,6,5))*5.))-f;d=length(p);k=min(d,k);\n\
+        k=smoothstep(0.,k,sin(f.x+f.y)*0.01);\n\
+        return k*w;\n\
+    }\n\
+\n\
+    void main(void){\n\
+        vec2 resolution = czm_viewport.zw;\n\
+        vec2 uv=(gl_FragCoord.xy*2.-resolution.xy)/min(resolution.x,resolution.y);\n\
+        vec3 finalColor=vec3(0);\n\
+        float c = 0.0;\n\
+        c+=snow(uv,30.)*.0;\n\
+        c+=snow(uv,20.)*.0;\n\
+        c+=snow(uv,15.)*.0;\n\
+        c+=snow(uv,10.);\n\
+        c+=snow(uv,8.);\n\
+    c+=snow(uv,6.);\n\
+        c+=snow(uv,5.);\n\
+        finalColor=(vec3(c)); \n\
+        gl_FragColor = mix(texture2D(colorTexture, v_textureCoordinates), vec4(finalColor,1), 0.5); \n\
+\n\
+    }\n\
+";
+    }
+    function FS_Rain() {
+        return "uniform sampler2D colorTexture;\n\
+				varying vec2 v_textureCoordinates;\n\
+			\n\
+				float hash(float x){\n\
+					return fract(sin(x*133.3)*13.13);\n\
+			}\n\
+			\n\
+			void main(void){\n\
+			\n\
+				float time = czm_frameNumber / 60.0;\n\
+			vec2 resolution = czm_viewport.zw;\n\
+			\n\
+			vec2 uv=(gl_FragCoord.xy*2.-resolution.xy)/min(resolution.x,resolution.y);\n\
+			vec3 c=vec3(.6,.7,.8);\n\
+			\n\
+			float a=-.4;\n\
+			float si=sin(a),co=cos(a);\n\
+			uv*=mat2(co,-si,si,co);\n\
+			uv*=length(uv+vec2(0,4.9))*.3+1.;\n\
+			\n\
+			float v=1.-sin(hash(floor(uv.x*100.))*2.);\n\
+			float b=clamp(abs(sin(20.*time*v+uv.y*(5./(2.+v))))-.95,0.,1.)*20.;\n\
+			c*=v*b; \n\
+			\n\
+			gl_FragColor = mix(texture2D(colorTexture, v_textureCoordinates), vec4(c,1), 0.5);  \n\
+			}\n\
+";
+    }
+
+    var snow;
+    var rain;
+    function showSnow() {
+        rain?rain.destroy():'';
+        snow?snow.destroy():'';
+        var collection = viewer.scene.postProcessStages;
+        var fs_snow = FS_Snow();
+        snow = new Cesium.PostProcessStage({
+            name: 'czm_snow',
+            fragmentShader: fs_snow
+        });
+        collection.add(snow);
+        viewer.scene.skyAtmosphere.hueShift = -0.8;
+        viewer.scene.skyAtmosphere.saturationShift = -0.7;
+        viewer.scene.skyAtmosphere.brightnessShift = -0.33;
+        viewer.scene.fog.density = 0.001;
+        viewer.scene.fog.minimumBrightness = 0.8;
+    }
+
+    function showRain() {
+        snow?snow.destroy():'';
+        rain?rain.destroy():'';
+        var collection = viewer.scene.postProcessStages;
+        var fs_rain = FS_Rain();
+        rain = new Cesium.PostProcessStage({
+            name: 'czm_rain',
+            fragmentShader: fs_rain
+        });
+        collection.add(rain);
+        viewer.scene.skyAtmosphere.hueShift = -0.8;
+        viewer.scene.skyAtmosphere.saturationShift = -0.7;
+        viewer.scene.skyAtmosphere.brightnessShift = -0.33;
+        viewer.scene.fog.density = 0.001;
+        viewer.scene.fog.minimumBrightness = 0.8;
+    }
+    function showfirework() {
+          var scene = viewer.scene;
+          scene.debugShowFramesPerSecond = false;
+
+          Cesium.Math.setRandomNumberSeed(315);
+
+          var modelMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(Cesium.Cartesian3.fromDegrees(114.0455, 22.3145,2000));
+          var emitterInitialLocation = new Cesium.Cartesian3(0.0, 0.0, 100.0);
+
+          var particleCanvas;
+
+          function getImage() {
+            if (!Cesium.defined(particleCanvas)) {
+              particleCanvas = document.createElement('canvas');
+              particleCanvas.width = 20;
+              particleCanvas.height = 20;
+              var context2D = particleCanvas.getContext('2d');
+              context2D.beginPath();
+              context2D.arc(8, 8, 8, 0, Cesium.Math.TWO_PI, true);
+              context2D.closePath();
+              context2D.fillStyle = 'rgb(255, 255, 255)';
+              context2D.fill();
+            }
+            return particleCanvas;
+          }
+
+          var minimumExplosionSize = 100.0;
+          var maximumExplosionSize = 200.0;
+          var particlePixelSize = new Cesium.Cartesian2(10.0, 10.0);
+          var burstSize = 400.0;
+          var lifetime = 10.0;
+          var numberOfFireworks = 20.0;
+
+          var emitterModelMatrixScratch = new Cesium.Matrix4();
+
+          function createFirework(offset, color, bursts) {
+            var position = Cesium.Cartesian3.add(emitterInitialLocation, offset, new Cesium.Cartesian3());
+            var emitterModelMatrix = Cesium.Matrix4.fromTranslation(position, emitterModelMatrixScratch);
+            var particleToWorld = Cesium.Matrix4.multiply(modelMatrix, emitterModelMatrix, new Cesium.Matrix4());
+            var worldToParticle = Cesium.Matrix4.inverseTransformation(particleToWorld, particleToWorld);
+
+            var size = Cesium.Math.randomBetween(minimumExplosionSize, maximumExplosionSize);
+            var particlePositionScratch = new Cesium.Cartesian3();
+            var force = function (particle) {
+              var position = Cesium.Matrix4.multiplyByPoint(worldToParticle, particle.position, particlePositionScratch);
+              if (Cesium.Cartesian3.magnitudeSquared(position) >= size * size) {
+                Cesium.Cartesian3.clone(Cesium.Cartesian3.ZERO, particle.velocity);
+              }
+            };
+
+            var normalSize = (size - minimumExplosionSize) / (maximumExplosionSize - minimumExplosionSize);
+            var minLife = 0.3;
+            var maxLife = 1.0;
+            var life = normalSize * (maxLife - minLife) + minLife;
+
+            scene.primitives.add(new Cesium.ParticleSystem({
+              image: getImage(),
+              startColor: color,
+              endColor: color.withAlpha(0.0),
+              particleLife: life,
+              speed: 100.0,
+              imageSize: particlePixelSize,
+              emissionRate: 0,
+              emitter: new Cesium.SphereEmitter(0.1),
+              bursts: bursts,
+              lifetime: lifetime,
+              updateCallback: force,
+              modelMatrix: modelMatrix,
+              emitterModelMatrix: emitterModelMatrix
+            }));
+          }
+
+          var xMin = -500.0;
+          var xMax = 100.0;
+          var yMin = -100.0;
+          var yMax = 100.0;
+          var zMin = -50.0;
+          var zMax = 50.0;
+
+          var colorOptions = [{
+            minimumRed: 0.75,
+            green: 0.0,
+            minimumBlue: 0.8,
+            alpha: 1.0
+          }, {
+            red: 0.0,
+            minimumGreen: 0.75,
+            minimumBlue: 0.8,
+            alpha: 1.0
+          }, {
+            red: 0.0,
+            green: 0.0,
+            minimumBlue: 0.8,
+            alpha: 1.0
+          }, {
+            minimumRed: 0.75,
+            minimumGreen: 0.75,
+            blue: 0.0,
+            alpha: 1.0
+          }];
+
+          for (var i = 0; i < numberOfFireworks; ++i) {
+            var x = Cesium.Math.randomBetween(xMin, xMax);
+            var y = Cesium.Math.randomBetween(yMin, yMax);
+            var z = Cesium.Math.randomBetween(zMin, zMax);
+            var offset = new Cesium.Cartesian3(x, y, z);
+            var color = Cesium.Color.fromRandom(colorOptions[i % colorOptions.length]);
+
+            var bursts = [];
+            for (var j = 0; j < 3; ++j) {
+              bursts.push(new Cesium.ParticleBurst({
+                time: Cesium.Math.nextRandomNumber() * lifetime,
+                minimum: burstSize,
+                maximum: burstSize
+              }));
+            }
+
+            createFirework(offset, color, bursts);
+          }
+
+          var camera = viewer.scene.camera;
+          var cameraOffset = new Cesium.Cartesian3(-200.0, 0.0, 0.0);
+          camera.lookAtTransform(modelMatrix, cameraOffset);
+          camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
+
+          var toFireworks = Cesium.Cartesian3.subtract(emitterInitialLocation, cameraOffset, new Cesium.Cartesian3());
+          Cesium.Cartesian3.normalize(toFireworks, toFireworks);
+          var angle = Cesium.Math.PI_OVER_TWO - Math.acos(Cesium.Cartesian3.dot(toFireworks, Cesium.Cartesian3.UNIT_Z));
+          camera.lookUp(angle);
+          viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(114.0455, 22.3145,3000)
+          });
+        }
+      function stopTool(){
+        snow?snow.destroy():'';
+        rain?rain.destroy():'';
+    }
+      function stopfirework(){
+          window.location.replace("http://127.0.0.1:8080/Apps/HelloWorld.html")
+        };
+
+/* 绘制轨迹 */
+//设置homebutton的定位点
+viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function(e) {
+      e.cancel = true;
+      //你要飞的位置
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(114.1037, 22.3167,17600)
+      });
+    });
+    var initialPosition = Cesium.Cartesian3.fromDegrees(114.1037, 22.3167,17600);
+    var initialOrientation = new Cesium.HeadingPitchRoll.fromDegrees(21.27879878293835, -21.34390550872461, 0.0716951918898415);
+    viewer.scene.camera.setView({
+      destination: initialPosition,
+      //orientation: initialOrientation,
+      endTransform: Cesium.Matrix4.IDENTITY
+    });
+      document.getElementsByClassName('cesium-credit-logoContainer')[0].style.display='none';
+      document.getElementsByClassName('cesium-credit-textContainer')[0].style.display='none';
+      document.getElementsByClassName('cesium-credit-lightbox')[0].style.display='none';
+      document.getElementsByClassName('cesium-credit-expand-link')[0].style='font-size:20px';
+      document.getElementsByClassName('cesium-credit-expand-link')[0].target='_blank';
+      //全局变量czml，作为camera移动的路径值
+      var czml = [{
+        "id" : "document",
+        "name" : "CZML Path",
+        "version" : "1.0",
+        "clock": {
+          "interval": "2012-08-04T10:00:00Z/2012-08-04T11:00:00Z",
+          "currentTime": "2012-08-04T10:00:00Z",
+          "multiplier": 2
+        }
+      }, {
+        "id" : "path",
+        "name" : "path with GPS flight data",
+        "description" : "<p>Hang gliding flight log data from Daniel H. Friedman.<br>Icon created by Larisa Skosyrska from the Noun Project</p>",
+        "availability" : "2012-08-04T10:00:00Z/2012-08-04T11:00:00Z",
+        "path" : {
+          "material" : {
+            "polylineOutline" : {
+              "color" : {
+                "rgba" : [0, 0, 0, 0]
+              },
+              "outlineColor" : {
+                "rgba" : [0,0, 0, 0]
+              },
+              "outlineWidth" : 5
+            }
+          },
+          "width" : 8,
+          "leadTime" : 10,
+          "trailTime" : 1000,
+          "resolution" : 5
+        },
+        "billboard" : {
+          "image" : "",
+          "scale" : 1.5,
+          "eyeOffset": {
+            "cartesian": [ 0.0, 0.0, -10.0 ]
+          }
+        },
+        "position" : {
+          "epoch" : "2012-08-04T10:00:00Z",
+          "cartographicDegrees" : [
+          ]
+        }
+      }];
+      var endShape;
+      var j=0;
+      var a=0;
+      function getPosition() {
+        var position = [];
+        //得到当前三维场景
+        var scene = viewer.scene;
+        //得到当前三维场景的椭球体
+        var ellipsoid = scene.globe.ellipsoid;
+        var entity = viewer.entities.add({
+            label : {
+                show : false
+            }
+        });
+        var activeShapePoints = [];
+        var activeShape;
+        var floatingPoint;
+        var longitudeString = null;
+        var latitudeString = null;
+        var height = null;
+        var cartesian = null;
+        var handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+        //设置鼠标移动事件的处理函数，这里负责监听x,y坐标值变化
+            // 定义当前场景的画布元素的事件处理
+            handler.setInputAction(function(movement) {
+                //通过指定的椭球或者地图对应的坐标系，将鼠标的二维坐标转换为对应椭球体三维坐标
+                cartesian = viewer.camera.pickEllipsoid(movement.endPosition, ellipsoid);
+                if (cartesian) {
+                    //将笛卡尔坐标转换为地理坐标
+                    var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+                    //将弧度转为度的十进制度表示
+                    longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+                    latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+                    //获取相机高度
+                    height = Math.ceil(viewer.camera.positionCartographic.height);
+                    entity.position = cartesian;
+                    entity.label.show = true;
+                    entity.label.text = '(' + longitudeString + ', ' + latitudeString + "," + height + ')' ;
+                }else {
+                    entity.label.show = false;
+                }
+            }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+            //设置鼠标滚动事件的处理函数，这里负责监听高度值变化
+            handler.setInputAction(function(wheelment) {
+                height = Math.ceil(viewer.camera.positionCartographic.height);
+                entity.position = cartesian;
+                entity.label.show = true;
+                entity.label.text = '(' + longitudeString + ', ' + latitudeString + "," + height + ')' ;
+            }, Cesium.ScreenSpaceEventType.WHEEL);
+            var drawingMode = 'line';
+            function drawShape(positionData) {
+              var shape;
+              if (drawingMode === 'line') {
+                shape = viewer.entities.add({
+                  polyline: {
+                    fillcolor: Cesium.Color.BLUE.withAlpha(1),
+                    positions: positionData,
+                    width: 3
+                  
+                  }
+                });
+              }
+              return shape;
+            }
+            function createPoint(worldPosition) {
+              var point = viewer.entities.add({
+                position: worldPosition,
+                point: {
+                  color: Cesium.Color.RED.withAlpha(1),
+                  pixelSize: 5,
+                  heightReference: Cesium.HeightReference.NONE
+                }
+              });
+              return point;
+            }
+            function terminateShape() {
+              activeShapePoints.pop();//去除最后一个动态点
+              if(activeShapePoints.length){
+                endShape=drawShape(activeShapePoints);//绘制最终图
+              }
+              viewer.entities.remove(floatingPoint);//去除动态点图形（当前鼠标点）
+              viewer.entities.remove(activeShape);//去除动态图形
+              floatingPoint = undefined;
+              activeShape = undefined;
+              activeShapePoints = [];
+            }
+
+            handler.setInputAction(function (event) {
+              terminateShape();
+            }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+            /*handler.setInputAction(function (event) {
+              viewer.entities.remove(endShape);
+              viewer.entities.remove(endPoint);
+              //清空之前数据，否则数据越来越多
+              viewer.entities.removeAll();
+              //重新添加修改后的数据
+              viewer.dataSources.add(Cesium.CzmlDataSource.load(czml));
+            }, Cesium.ScreenSpaceEventType.MIDDLE_DOWN);*/
+
+            handler.setInputAction(function (event) {
+              // We use `viewer.scene.pickPosition` here instead of `viewer.camera.pickEllipsoid` so that
+              // we get the correct point when mousing over terrain.
+              var earthPosition = viewer.camera.pickEllipsoid(event.position,ellipsoid);
+              // `earthPosition` will be undefined if our mouse is not over the globe.
+              if (Cesium.defined(earthPosition)) {
+                if (activeShapePoints.length === 0) {
+                  floatingPoint = createPoint(earthPosition);
+                  activeShapePoints.push(earthPosition);
+                  var dynamicPositions = new Cesium.CallbackProperty(function () {
+                    return activeShapePoints;
+                  }, false);
+                  activeShape = drawShape(dynamicPositions);//绘制动态图
+                }
+                activeShapePoints.push(earthPosition);
+                //将笛卡尔坐标转换为地理坐标
+                var cartographic = ellipsoid.cartesianToCartographic(earthPosition);
+                //将弧度转为度的十进制度表示
+                longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+                latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+                //获取相机高度
+                //height = Math.ceil(viewer.camera.positionCartographic.height);
+                czml[1].position.cartographicDegrees.push(a, longitudeString, latitudeString, 200);
+                console.log(czml[1].position.cartographicDegrees)
+                j=1;
+                a+=10;
+              }
+            }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+            handler.setInputAction(function (event) {
+              if (Cesium.defined(floatingPoint)) {
+                var newPosition = viewer.camera.pickEllipsoid(event.endPosition,ellipsoid);
+                if (Cesium.defined(newPosition)) {
+                  floatingPoint.position.setValue(newPosition);
+                  activeShapePoints.pop();
+                  activeShapePoints.push(newPosition);
+                }
+              }
+            }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+          }
+      function trackedline(){
+          if(j!=0){
+            viewer.dataSources.add(Cesium.CzmlDataSource.load(czml)).then(function(ds) {
+              viewer.trackedEntity = ds.entities.getById('path');
+            });
+            var camera = new Cesium.Camera(scene);
+            camera.direction = Cesium.Cartesian3.negate(Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3(-100,100,1));
+          }else{
+            alert("Please Draw Path First!");
+            checkbox.checked=false;
+        }
+      }
+
+
+   
+/* 测量 */
+function SetMode(mode) {
+      if (mode == "drawPloy")
+      {
+        tempPoints = [];
+        handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+        handler.setInputAction(function (click) {
+          var cartesian = viewer.camera.pickEllipsoid(click.position, scene.globe.ellipsoid);
+          if (cartesian) {
+            var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+            tempPoints.push({ lon: longitudeString, lat: latitudeString });
+            var tempLength = tempPoints.length;
+            drawPoint(tempPoints[tempPoints.length-1]);
+            if (tempLength > 1) {
+              drawLine(tempPoints[tempPoints.length - 2], tempPoints[tempPoints.length - 1], true);
+            }
+          }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        handler.setInputAction(function (click) {
+          var cartesian = viewer.camera.pickEllipsoid(click.position, scene.globe.ellipsoid);
+          if (cartesian) {
+            var tempLength = tempPoints.length;
+            if (tempLength < 3) {
+              alert('请选择3个以上的点再执行闭合操作命令');
+            } else {
+              drawLine(tempPoints[0], tempPoints[tempPoints.length - 1], true);
+              drawPoly(tempPoints);
+               highLightAssetsInArea(tempPoints); 
+
+
+              var         ent =
+                      viewer.entities.add({
+                        position: Cesium.Cartesian3.fromDegrees(((tempPoints[0].lon +(tempPoints[tempPoints.length-1].lon+ tempPoints[tempPoints.length-2].lon)/2)/2 ),
+                                ((tempPoints[0].lat +(tempPoints[tempPoints.length-1].lat+tempPoints[tempPoints.length -2].lat)/2 )/2)),
+                        label: {
+                          text: SphericalPolygonAreaMeters(tempPoints) .toFixed(1) + '㎡',
+                          font: '22px Helvetica',
+                          fillColor: Cesium.Color.BLACK
+                        }
+                      });
+              tempEntities.push(ent);
+              tempPoints = [];
+              clearEffects();
+            }
+
+          }
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+      }
+
+
+      else if ("drawLine" == mode)
+      {
+        tempPoints = [];
+        handler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+        handler.setInputAction(function (click) {
+          var cartesian = viewer.camera.pickEllipsoid(click.position, scene.globe.ellipsoid);
+          if (cartesian) {
+            var cartographic = Cesium.Cartographic.fromCartesian(cartesian);
+            var longitudeString = Cesium.Math.toDegrees(cartographic.longitude);
+            var latitudeString = Cesium.Math.toDegrees(cartographic.latitude);
+            tempPoints.push({ lon: longitudeString, lat: latitudeString });
+            var tempLength = tempPoints.length;
+            drawPoint(tempPoints[tempPoints.length - 1]);
+            if (tempLength > 1) {
+              drawLine(tempPoints[tempPoints.length - 2], tempPoints[tempPoints.length - 1], true);
+            }
+          }
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        handler.setInputAction(function (click) {
+          tempPoints = [];
+          clearEffects();
+        }, Cesium.ScreenSpaceEventType.RIGHT_CLICK);
+      }
+    }
+
+    function drawPoint(point) {
+      var entity =
+              viewer.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(point.lon, point.lat),
+                label: {
+                  text: '',
+                  font: '22px Helvetica'
+                },
+                point: {
+                  pixelSize: 10,
+                  color: Cesium.Color.CHARTREUSE
+                }
+              });
+      tempEntities.push(entity);
+    }
+
+    function drawLine(point1, point2, showDistance) {
+      var entity =
+              viewer.entities.add({
+                polyline: {
+                  positions: [Cesium.Cartesian3.fromDegrees(point1.lon, point1.lat), Cesium.Cartesian3.fromDegrees(point2.lon, point2.lat)],
+                  width: 10.0,
+                  material: new Cesium.PolylineGlowMaterialProperty({
+                    color: Cesium.Color.CHARTREUSE.withAlpha(.5)
+                  })
+                }
+              });
+      tempEntities.push(entity);
+      if (showDistance) {
+        var w = Math.abs(point1.lon - point2.lon);
+        var h = Math.abs(point1.lat - point2.lat);
+        var offsetV = w >= h ? 0.0005 : 0;
+        var offsetH = w < h ? 0.001 : 0;
+        var distance = getFlatternDistance(point1.lat, point1.lon, point2.lat, point2.lon);
+        entity =
+                viewer.entities.add({
+                  position: Cesium.Cartesian3.fromDegrees(((point1.lon + point2.lon) / 2) + offsetH,
+                          ((point1.lat + point2.lat) / 2) + offsetV),
+                  label: {
+                    text: distance.toFixed(1) + 'm',
+                    font: '22px Helvetica',
+                    fillColor: Cesium.Color.WHITE
+                  }
+                });
+        tempEntities.push(entity);
+      }
+    }
+
+    function drawPoly(points) {
+      var pArray = [];
+      for (var i = 0; i < points.length; i ++) {
+        pArray.push(points[i].lon);
+        pArray.push(points[i].lat);
+      }
+      var entity =
+              viewer.entities.add({
+                polygon: {
+                  hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(pArray)),
+                  material: Cesium.Color.CHARTREUSE.withAlpha(.5)
+                }
+              });
+      tempEntities.push(entity);
+    }
+
+    //计算两点间距离
+    function getFlatternDistance(lat1, lng1, lat2, lng2) {
+      var EARTH_RADIUS = 6378137.0;    //单位M
+      var PI = Math.PI;
+
+      function getRad(d) {
+        return d * PI / 180.0;
+      }
+      var f = getRad((lat1 + lat2) / 2);
+      var g = getRad((lat1 - lat2) / 2);
+      var l = getRad((lng1 - lng2) / 2);
+
+      var sg = Math.sin(g);
+      var sl = Math.sin(l);
+      var sf = Math.sin(f);
+
+      var s, c, w, r, d, h1, h2;
+      var a = EARTH_RADIUS;
+      var fl = 1 / 298.257;
+
+      sg = sg * sg;
+      sl = sl * sl;
+      sf = sf * sf;
+
+      s = sg * (1 - sl) + (1 - sf) * sl;
+      c = (1 - sg) * (1 - sl) + sf * sl;
+
+      w = Math.atan(Math.sqrt(s / c));
+      r = Math.sqrt(s * c) / w;
+      d = 2 * w * a;
+      h1 = (3 * r - 1) / 2 / c;
+      h2 = (3 * r + 1) / 2 / s;
+
+      return d * (1 + fl * (h1 * sf * (1 - sg) - h2 * (1 - sf) * sg));
+    }
+
+    //计算多边形面积
+    var earthRadiusMeters = 6371000.0;
+    var radiansPerDegree = Math.PI / 180.0;
+    var degreesPerRadian = 180.0 / Math.PI;
+    function SphericalPolygonAreaMeters(points) {
+      var totalAngle = 0;
+      for (var i = 0; i < points.length; i++) {
+        var j = (i + 1) % points.length;
+        var k = (i + 2) % points.length;
+        totalAngle += Angle(points[i], points[j], points[k]);
+      }
+      var planarTotalAngle = (points.length - 2) * 180.0;
+      var sphericalExcess = totalAngle - planarTotalAngle;
+      if (sphericalExcess > 420.0) {
+        totalAngle = points.length * 360.0 - totalAngle;
+        sphericalExcess = totalAngle - planarTotalAngle;
+      } else if (sphericalExcess > 300.0 && sphericalExcess < 420.0) {
+        sphericalExcess = Math.abs(360.0 - sphericalExcess);
+      }
+      return sphericalExcess * radiansPerDegree * earthRadiusMeters * earthRadiusMeters;
+    }
+
+    /*角度*/
+    function Angle(p1, p2, p3) {
+      var bearing21 = Bearing(p2, p1);
+      var bearing23 = Bearing(p2, p3);
+      var angle = bearing21 - bearing23;
+      if (angle < 0) {
+        angle += 360;
+      }
+      return angle;
+    }
+    /*方向*/
+    function Bearing(from, to) {
+      var lat1 = from.lat * radiansPerDegree;
+      var lon1 = from.lon * radiansPerDegree;
+      var lat2 = to.lat * radiansPerDegree;
+      var lon2 = to.lon * radiansPerDegree;
+      var angle = -Math.atan2(Math.sin(lon1 - lon2) * Math.cos(lat2), Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2));
+      if (angle < 0) {
+        angle += Math.PI * 2.0;
+      }
+      angle = angle * degreesPerRadian;
+      return angle;
+    }
+    /**
+     * 清除地图痕迹
+     */
+    function clearDrawingBoard() {
+      viewer.entities.removeAll();
+      var primitives = viewer.entities;
+      for (i = 0; i <  tempEntities.length; i++) {
+        primitives.remove(tempEntities[i]);
+      }
+      tempEntities=[];
+      clearEffects();
+    }
+   
+
+
+
+
+
+
+  </script>
+</body>
+</html>
